@@ -17,7 +17,21 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        // 云端 CI 与本地共用仓库内固定的 debug.keystore（标准 debug 口令 android/android），
+        // 保证每次构建的 Debug 包签名一致：后续新版本可直接覆盖安装、不丢本机 Room/DataStore 数据。
+        create("fixedDebug") {
+            storeFile = rootProject.file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("fixedDebug")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(

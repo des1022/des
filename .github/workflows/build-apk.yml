@@ -40,11 +40,31 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Ensure fixed debug keystore
+        run: |
+          if [ ! -f debug.keystore ]; then
+            keytool -genkeypair -v \
+              -keystore debug.keystore \
+              -storepass android -keypass android -alias androiddebugkey \
+              -dname "CN=Android Debug,O=Android,C=US" \
+              -keyalg RSA -keysize 2048 -validity 10000
+            echo "::notice::generated new debug.keystore (not yet committed to repo)"
+          else
+            echo "::notice::using repo debug.keystore"
+          fi
+
       - name: Build debug APK
         run: |
           # 仓库未包含 gradle-wrapper.jar（二进制），先本地生成再构建
           gradle wrapper --gradle-version 8.9
           ./gradlew assembleDebug --no-daemon
+
+      - name: Upload fixed debug keystore (one-time bootstrap)
+        if: hashFiles('debug.keystore') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-keystore-bootstrap
+          path: debug.keystore
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
