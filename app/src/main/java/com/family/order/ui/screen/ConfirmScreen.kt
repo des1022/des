@@ -78,7 +78,7 @@ fun ConfirmScreen(navController: NavHostController) {
                 )
                 OutlinedTextField(
                     value = vm.remark,
-                    onValueChange = vm::setRemark,
+                    onValueChange = vm::updateRemark,
                     label = { Text("订单备注（选填，如：少放盐、不要香菜）") },
                     singleLine = false,
                     maxLines = 3,

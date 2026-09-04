@@ -33,7 +33,7 @@ class ConfirmViewModel(
     var submitting by mutableStateOf(false)
         private set
 
-    fun setRemark(value: String) {
+    fun updateRemark(value: String) {
         remark = value
     }
 

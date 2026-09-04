@@ -104,7 +104,7 @@ fun DishEditScreen(navController: NavHostController) {
             // 名称
             OutlinedTextField(
                 value = vm.name,
-                onValueChange = { if (it.length <= 10) vm.setName(it) },
+                onValueChange = { if (it.length <= 10) vm.updateName(it) },
                 label = { Text("菜品名称（最多 10 字）") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -117,7 +117,7 @@ fun DishEditScreen(navController: NavHostController) {
             ) {
                 OutlinedTextField(
                     value = vm.category,
-                    onValueChange = vm::setCategory,
+                    onValueChange = vm::updateCategory,
                     label = { Text("菜品分类") },
                     singleLine = true,
                     trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
@@ -131,7 +131,7 @@ fun DishEditScreen(navController: NavHostController) {
                         DropdownMenuItem(
                             text = { Text(cat.name) },
                             onClick = {
-                                vm.setCategory(cat.name)
+                                vm.updateCategory(cat.name)
                                 menuExpanded = false
                             }
                         )
@@ -142,7 +142,7 @@ fun DishEditScreen(navController: NavHostController) {
             // 价格（选填）
             OutlinedTextField(
                 value = vm.priceText,
-                onValueChange = vm::setPriceText,
+                onValueChange = vm::updatePriceText,
                 label = { Text("价格（选填，留空表示不显示价格）") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
@@ -152,7 +152,7 @@ fun DishEditScreen(navController: NavHostController) {
             // 描述（选填）
             OutlinedTextField(
                 value = vm.desc,
-                onValueChange = { if (it.length <= 30) vm.setDesc(it) },
+                onValueChange = { if (it.length <= 30) vm.updateDesc(it) },
                 label = { Text("菜品描述（选填，最多 30 字）") },
                 singleLine = false,
                 maxLines = 2,
@@ -167,7 +167,7 @@ fun DishEditScreen(navController: NavHostController) {
                 Text("默认上架", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                 Switch(
                     checked = vm.status == com.family.order.data.local.DishEntity.STATUS_ON,
-                    onCheckedChange = { vm.setStatus(if (it) com.family.order.data.local.DishEntity.STATUS_ON else com.family.order.data.local.DishEntity.STATUS_OFF) }
+                    onCheckedChange = { vm.updateStatus(if (it) com.family.order.data.local.DishEntity.STATUS_ON else com.family.order.data.local.DishEntity.STATUS_OFF) }
                 )
             }
 
