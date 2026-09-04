@@ -33,6 +33,9 @@
 - **JDK 17**（项目 `compileSdk/targetSdk = 35`，`minSdk = 26` 即 Android 8.0）
 - 一台安卓 8.0+ 手机（或模拟器）用于运行
 
+> **不想在本机装任何开发环境？** 直接跳到「九、零环境在线出包（GitHub Actions）」——
+> 由云端编译出 APK，本机无需 Android Studio / JDK / Android SDK，手机浏览器下载即可安装。
+
 ---
 
 ## 三、导入与编译
@@ -136,17 +139,53 @@ family-order-android/
 本机没有 Android Studio / JDK 也能出包：仓库已内置 `.github/workflows/build-apk.yml`，
 推送到 GitHub 后由云端 runner 自动编译出 debug APK，无需本机准备任何 Android 环境。
 
-1. 在 GitHub 新建仓库（可设为私有），复制其地址。
+**该流程已实测跑通**，首次约 3–6 分钟，产出 APK 约 18 MB。
+
+1. 在 GitHub 新建仓库，复制其地址。
 2. 在工程目录执行（替换成你的仓库地址）：
    ```bash
    git remote add origin <你的仓库地址>
    git push -u origin main
    ```
-   > 若git直连github.com失败（本机代理常不可用），在命令前加 `HTTPS_PROXY=http://127.0.0.1:7897` 或临时关闭代理再推。
-3. 打开仓库 **Actions** 页，等 `Build Debug APK` 跑完（首次约 3–6 分钟）。
-4. 进入该次运行 → 右侧 **Artifacts** → 下载 `family-order-debug-apk`，解压得到 `app-debug.apk`。
+   > **代理**：直连 github.com 会超时；若环境自带的 `58208` 代理对 git 返回 502，改用 `127.0.0.1:7897`：
+   > ```bash
+   > git -c http.proxy=http://127.0.0.1:7897 -c https.proxy=http://127.0.0.1:7897 push -u origin main
+   > ```
+   > 经该代理 push 有时会回显 "Everything up-to-date"（**假信号**），
+   > 用 `git fetch origin && git rev-parse origin/main` 确认是否真推上去了。
+   > 推送含 workflow 文件的提交，PAT 需同时具备 **Contents** 与 **Workflows** 的 Read and write 权限。
+3. 打开仓库 **Actions** 页，等 `Build Debug APK` 跑完。
+4. 取 APK（二选一）：
+   - **Artifacts**：该次运行 → **Artifacts** → `family-order-debug-apk` —— **需登录 GitHub** 才能下载。
+   - **Release 附件（推荐，手机可直接下）**：**公开**仓库的 Release 资产支持匿名下载。
+     把 APK 挂到 Release 后，手机浏览器直接打开下载链接即可，无需登录、不经过电脑。
 5. 按「四、安装到手机」把 apk 装到手机即可使用。
 
 > runner 会自动装好 JDK17 / Android SDK（platform-35 + build-tools 35.0.0）/ Gradle 8.9，
 > 并在构建时生成 `gradle-wrapper.jar`，你只需 push 代码，出包全自动。
+
+### 已验证可编译的版本组合
+
+| 组件 | 版本 |
+| --- | --- |
+| Kotlin（含 `org.jetbrains.kotlin.plugin.compose`） | 2.0.21 |
+| KSP | 2.0.21-1.0.28 |
+| Compose BOM | 2025.05.00（Compose 1.8.1） |
+| AGP | 8.7.3 |
+| Gradle | 8.9 |
+
+### 编译报错排查要点
+
+- **判断法则**：同一条错误在多个 Kotlin / Compose 版本组合下原样复现 → 基本不是版本问题，回去看报错行本身。
+- `Cannot access 'val RowColumnParentData?.weight': it is internal`
+  —— `Modifier.weight` 是 `RowScope` / `ColumnScope` 的**成员扩展函数**，不是顶层函数，
+  不能写 `import androidx.compose.foundation.layout.weight`。删掉该 import，
+  在 `Row{}` / `Column{}` 内直接用即可；抽出的子组件要声明成 `fun RowScope.Xxx()`。
+- `Platform declaration clash (setXxx(...))`
+  —— `var x by mutableStateOf(...) + private set` 会生成 JVM 方法 `setX()`，
+  与显式 `fun setX()` 同名同签名。把显式 setter 改名 `updateXxx`，
+  并同步更新 `vm::setX` 这类函数引用。
+- `@Composable invocations can only happen from the context of a @Composable function`
+  —— 普通 lambda（如 `onConfirm = {}`）里不能调用 `LocalContext.current`，
+  需在组合作用域内先取 `val context = LocalContext.current`。
 

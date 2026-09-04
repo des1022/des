@@ -64,6 +64,14 @@ fun DishEditScreen(navController: NavHostController) {
         if (uri != null) scope.launch { vm.onPickImage(uri) }
     }
 
+    // 存图失败时给出明确提示（失败已由 ViewModel 捕获，不再导致闪退）
+    androidx.compose.runtime.LaunchedEffect(vm.pickError) {
+        vm.pickError?.let { msg ->
+            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
+            vm.clearPickError()
+        }
+    }
+
     // 进入页面时加载（新增或编辑）
     androidx.compose.runtime.LaunchedEffect(dishIdArg) {
         vm.load(dishIdArg)

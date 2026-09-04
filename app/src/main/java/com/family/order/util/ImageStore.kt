@@ -63,16 +63,20 @@ class ImageStore(private val context: Context) {
     /** 按目标宽度采样解码，避免 OOM */
     private fun decodeSampledFromUri(uri: Uri, reqWidth: Int): Bitmap? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        context.contentResolver.openInputStream(uri)?.use {
-            BitmapFactory.decodeStream(it, null, bounds)
-        } ?: return null
+        // 注意：inJustDecodeBounds = true 时 decodeStream 恒返回 null（只填 bounds、不产生位图），
+        // 因此这里必须以「流能否成功打开」判断成败，不能拿解码返回值判空——
+        // 否则任何图片都会被误判失败，进而抛异常导致闪退。
+        val boundsInput = context.contentResolver.openInputStream(uri) ?: return null
+        boundsInput.use { BitmapFactory.decodeStream(it, null, bounds) }
+
+        // 解不出尺寸（bounds 仍为 -1）说明不是可解码的图片
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
 
         val options = BitmapFactory.Options().apply {
             inSampleSize = calculateInSampleSize(bounds.outWidth, reqWidth)
         }
-        return context.contentResolver.openInputStream(uri)?.use {
-            BitmapFactory.decodeStream(it, null, options)
-        }
+        val bitmapInput = context.contentResolver.openInputStream(uri) ?: return null
+        return bitmapInput.use { BitmapFactory.decodeStream(it, null, options) }
     }
 
     /** 采样率取 2 的幂，保证解码质量与内存平衡 */

@@ -40,6 +40,10 @@ class DishEditViewModel(
     var loaded by mutableStateOf(false)
         private set
 
+    /** 选图/存图失败时的提示文案，成功后为 null */
+    var pickError by mutableStateOf<String?>(null)
+        private set
+
     private var originalImagePath: String = ""
 
     fun load(id: Long?) = viewModelScope.launch {
@@ -68,9 +72,22 @@ class DishEditViewModel(
     fun updateStatus(v: Int) { status = v }
 
     fun onPickImage(uri: Uri) = viewModelScope.launch {
-        val path = imageStore.saveFromUri(uri)
-        imagePath = path
+        pickError = null
+        // 存图失败（图片损坏/格式不支持等）绝不能抛到协程外，否则 App 直接闪退，
+        // 一律捕获后转成界面提示。
+        val path = try {
+            imageStore.saveFromUri(uri)
+        } catch (e: Exception) {
+            null
+        }
+        if (path != null) {
+            imagePath = path
+        } else {
+            pickError = "无法读取所选图片，请换一张试试"
+        }
     }
+
+    fun clearPickError() { pickError = null }
 
     /** 表单校验：名称必填、分类必填、图片必填 */
     fun validate(): String? {
