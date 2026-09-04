@@ -9,12 +9,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,8 +42,9 @@ fun MineScreen(navController: NavHostController) {
     val app = LocalContext.current.applicationContext as FamilyOrderApp
     val vm = viewModel<MineViewModel>(factory = app.container.viewModelFactory)
     val nickname by vm.nickname.collectAsStateWithLifecycle()
-    val hasPassword by vm.hasAdminPassword.collectAsStateWithLifecycle()
     var showClearDialog by remember { mutableStateOf(false) }
+    var showNickDialog by remember { mutableStateOf(false) }
+    var nickInput by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     // onConfirm/onDismiss 是普通 lambda（非 @Composable），不能在内部调用 LocalContext.current，
     // 因此在组合作用域内提前取出 Context 供回调使用。
@@ -49,29 +54,44 @@ fun MineScreen(navController: NavHostController) {
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 当前用户
+        // 当前用户（点击可设置昵称）
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    nickInput = nickname
+                    showNickDialog = true
+                },
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
-            Column(Modifier.padding(16.dp)) {
-                Text("当前昵称", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                Text(
-                    nickname.ifBlank { "未设置" },
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                )
-                Text(
-                    "下单时填写的昵称会记住，方便查看「我的订单」",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(top = 4.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("当前昵称", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text(
+                        nickname.ifBlank { "未设置" },
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                    Text(
+                        "点此设置，下单后按昵称区分「我的订单」",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                Icon(
+                    Icons.Filled.Edit,
+                    contentDescription = "设置昵称",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
         }
 
-        // 管理入口（隐蔽：放在列表底部，需密码）
+        // 管理入口
         Card(
             modifier = Modifier.fillMaxWidth().clickable { navController.navigate("admin") },
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -86,11 +106,6 @@ fun MineScreen(navController: NavHostController) {
                     "进入管理",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(start = 12.dp).weight(1f)
-                )
-                Text(
-                    if (hasPassword) "需密码" else "未设密码",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -122,8 +137,8 @@ fun MineScreen(navController: NavHostController) {
                 Text(
                     "1. 在「点菜」页点 ＋ 加菜，底部购物车可改数量\n" +
                         "2. 点「去结算」填名字就能下单\n" +
-                        "3. 「订单」页可看自己的订单和厨房待做清单\n" +
-                        "4. 管理功能（改菜、分类、订单状态）需管理密码\n" +
+                        "3. 「订单」页可看自己的订单，点分享可生成点单图片\n" +
+                        "4. 管理功能（改菜、分类、订单状态）点「进入管理」直接使用\n" +
                         "5. 所有数据只存在本机，不上传、不联网",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -133,10 +148,56 @@ fun MineScreen(navController: NavHostController) {
         }
     }
 
+    if (showNickDialog) {
+        AlertDialog(
+            onDismissRequest = { showNickDialog = false },
+            title = { Text("设置昵称") },
+            text = {
+                Column {
+                    Text(
+                        "昵称会显示在「我的订单」里，方便区分是谁下的单。留空可清除。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = nickInput,
+                        onValueChange = { if (it.length <= 10) nickInput = it },
+                        singleLine = true,
+                        label = { Text("昵称（最多 10 字）") },
+                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showNickDialog = false
+                        scope.launch {
+                            if (vm.saveNickname(nickInput)) {
+                                android.widget.Toast.makeText(
+                                    context,
+                                    if (nickInput.isBlank()) "昵称已清除" else "昵称已保存",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                android.widget.Toast.makeText(
+                                    context, "保存失败，请重试", android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }
+                ) { Text("保存") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNickDialog = false }) { Text("取消") }
+            }
+        )
+    }
+
     if (showClearDialog) {
         ConfirmDialog(
             title = "清空本地缓存",
-            message = "将清除本机保存的昵称和管理密码，不影响菜品与订单数据。确定继续？",
+            message = "将清除本机保存的昵称，不影响菜品与订单数据。确定继续？",
             confirmText = "清空",
             onConfirm = {
                 scope.launch { vm.clearCache() }

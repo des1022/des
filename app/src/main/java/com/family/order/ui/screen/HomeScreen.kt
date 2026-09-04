@@ -116,7 +116,7 @@ fun HomeScreen(navController: NavHostController) {
 
             if (visible.isEmpty()) {
                 EmptyState(
-                    text = if (keyword.isBlank()) "还没有上架的菜品" else "没找到「$keyword」",
+                    text = if (keyword.isBlank()) "还没有上架的菜品\n先到「我的 → 进入管理」添加，并保持「上架」状态" else "没找到「$keyword」",
                     modifier = Modifier.fillMaxSize()
                 )
             } else {

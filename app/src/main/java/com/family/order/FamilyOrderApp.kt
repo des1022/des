@@ -54,7 +54,7 @@ class AppContainer(applicationContext: android.content.Context) {
                     modelClass.isAssignableFrom(ConfirmViewModel::class.java) ->
                         ConfirmViewModel(cartRepository, orderRepository, settingsRepository) as T
                     modelClass.isAssignableFrom(AdminViewModel::class.java) ->
-                        AdminViewModel(dishRepository, settingsRepository) as T
+                        AdminViewModel(dishRepository) as T
                     modelClass.isAssignableFrom(DishEditViewModel::class.java) ->
                         DishEditViewModel(dishRepository, imageStore) as T
                     modelClass.isAssignableFrom(CategoryViewModel::class.java) ->

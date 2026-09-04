@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 分享/导出的临时文件：只暴露 cacheDir/share/ 下的图片给系统分享面板 -->
+<paths>
+    <cache-path
+        name="share_cache"
+        path="share/" />
+</paths>

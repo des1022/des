@@ -1,10 +1,12 @@
 package com.family.order.ui.screen
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,20 +14,26 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.family.order.FamilyOrderApp
@@ -35,10 +43,12 @@ import com.family.order.ui.components.EmptyState
 import com.family.order.ui.components.LocalImage
 import com.family.order.ui.components.OrderStatusChip
 import com.family.order.ui.theme.priceColor
+import com.family.order.util.OrderShareImage
 import com.family.order.util.formatPrice
 import com.family.order.util.formatTime
 import com.family.order.viewmodel.OrdersViewModel
 import com.family.order.viewmodel.TodoDish
+import kotlinx.coroutines.launch
 
 @Composable
 fun OrdersScreen() {
@@ -49,6 +59,8 @@ fun OrdersScreen() {
     val tab by vm.tab.collectAsStateWithLifecycle()
 
     val tabTitles = listOf("我的订单", "待做清单")
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     Column(Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = tab) {
@@ -75,7 +87,10 @@ fun OrdersScreen() {
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(myOrders, key = { it.order.id }) { owg ->
-                            OrderCard(owg)
+                            OrderCard(
+                                owg,
+                                onShare = { scope.launch { shareOrderPicture(context, owg) } }
+                            )
                         }
                     }
                 }
@@ -101,7 +116,7 @@ fun OrdersScreen() {
 }
 
 @Composable
-private fun OrderCard(owg: OrderWithGoods) {
+private fun OrderCard(owg: OrderWithGoods, onShare: () -> Unit) {
     val done = owg.order.status == OrderEntity.STATUS_DONE
     Card(
         modifier = Modifier.fillMaxWidth().then(if (done) Modifier.alpha(0.6f) else Modifier),
@@ -158,7 +173,43 @@ private fun OrderCard(owg: OrderWithGoods) {
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
+
+            // 分享：一键生成点单长图
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = onShare) {
+                    Icon(
+                        Icons.Filled.Share,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text("分享点单")
+                }
+            }
         }
+    }
+}
+
+/** 生成订单分享图 → 调起系统分享面板；任一步失败都只弹 Toast，绝不闪退 */
+private suspend fun shareOrderPicture(context: android.content.Context, owg: OrderWithGoods) {
+    val file = OrderShareImage.render(context, owg)
+    if (file == null) {
+        android.widget.Toast.makeText(context, "图片生成失败，请重试", android.widget.Toast.LENGTH_SHORT).show()
+        return
+    }
+    runCatching {
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "分享点单"))
+    }.onFailure {
+        android.widget.Toast.makeText(context, "分享失败，请重试", android.widget.Toast.LENGTH_SHORT).show()
     }
 }
 
