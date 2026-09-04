@@ -35,7 +35,7 @@ fun EmptyState(
                 imageVector = Icons.Filled.RestaurantMenu,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = size(64.dp)
+                modifier = Modifier.size(64.dp)
             )
             Spacer(Modifier.height(12.dp))
             Text(

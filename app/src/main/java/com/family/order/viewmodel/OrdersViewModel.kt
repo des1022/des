@@ -6,6 +6,7 @@ import com.family.order.data.local.OrderEntity
 import com.family.order.data.local.OrderWithGoods
 import com.family.order.data.repository.OrderRepository
 import com.family.order.data.repository.SettingsRepository
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -26,7 +27,7 @@ class OrdersViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
     /** 0 = 我的订单，1 = 待做清单 */
-    val tab: MutableStateFlow<Int> = kotlinx.coroutines.flow.MutableStateFlow(0)
+    val tab: MutableStateFlow<Int> = MutableStateFlow(0)
 
     /** 当前用户提交的订单（按昵称过滤） */
     val myOrders: List<OrderWithGoods>

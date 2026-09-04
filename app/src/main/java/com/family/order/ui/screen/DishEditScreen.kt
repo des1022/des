@@ -42,6 +42,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.family.order.FamilyOrderApp
 import com.family.order.ui.components.AppTopBar
+import com.family.order.viewmodel.DishEditViewModel
 import com.family.order.ui.components.LocalImage
 import kotlinx.coroutines.launch
 
