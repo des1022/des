@@ -59,13 +59,6 @@ jobs:
           gradle wrapper --gradle-version 8.9
           ./gradlew assembleDebug --no-daemon
 
-      - name: Upload fixed debug keystore (one-time bootstrap)
-        if: hashFiles('debug.keystore') != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: debug-keystore-bootstrap
-          path: debug.keystore
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
