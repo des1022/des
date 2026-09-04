@@ -128,3 +128,25 @@ family-order-android/
 - 改主题色：编辑 `ui/theme/Theme.kt` 的 `LightColors` / `DarkColors`。
 - 加字段：在对应 Entity 加属性 → 改 DAO/Repository → 数据库 `version` 升级并写 Migration（当前 `fallbackToDestructiveMigration` 会清库重建，数据量小可接受）。
 - 接云端：把 `DishRepository`/`OrderRepository`/`CartRepository` 换成调用 CloudBase SDK，ViewModel 与 UI 层基本不用改。
+
+---
+
+## 九、零环境在线出包（GitHub Actions）
+
+本机没有 Android Studio / JDK 也能出包：仓库已内置 `.github/workflows/build-apk.yml`，
+推送到 GitHub 后由云端 runner 自动编译出 debug APK，无需本机准备任何 Android 环境。
+
+1. 在 GitHub 新建仓库（可设为私有），复制其地址。
+2. 在工程目录执行（替换成你的仓库地址）：
+   ```bash
+   git remote add origin <你的仓库地址>
+   git push -u origin main
+   ```
+   > 若git直连github.com失败（本机代理常不可用），在命令前加 `HTTPS_PROXY=http://127.0.0.1:7897` 或临时关闭代理再推。
+3. 打开仓库 **Actions** 页，等 `Build Debug APK` 跑完（首次约 3–6 分钟）。
+4. 进入该次运行 → 右侧 **Artifacts** → 下载 `family-order-debug-apk`，解压得到 `app-debug.apk`。
+5. 按「四、安装到手机」把 apk 装到手机即可使用。
+
+> runner 会自动装好 JDK17 / Android SDK（platform-35 + build-tools 35.0.0）/ Gradle 8.9，
+> 并在构建时生成 `gradle-wrapper.jar`，你只需 push 代码，出包全自动。
+
