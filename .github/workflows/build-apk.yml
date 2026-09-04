@@ -36,6 +36,13 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Report resolved Compose dependency versions
+        run: |
+          gradle wrapper --gradle-version 8.9
+          ./gradlew :app:dependencies --configuration debugCompileClasspath --no-daemon > /tmp/deps.txt 2>&1 || true
+          echo "===== compose/foundation resolution (watch for '-> higher') ====="
+          grep -iE "compose|foundation|androidx.compose" /tmp/deps.txt | head -80
+
       - name: Build debug APK
         run: |
           # 仓库未包含 gradle-wrapper.jar（二进制），先本地生成再构建
