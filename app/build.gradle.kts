@@ -36,6 +36,10 @@ android {
         jvmTarget = "17"
     }
 
+    buildFeatures {
+        compose = true
+    }
+
     // Room 导出 schema，便于后续做数据库升级
     ksp {
         arg("room.schemaLocation", "$projectDir/schemas")

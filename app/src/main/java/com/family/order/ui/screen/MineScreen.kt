@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Settings
@@ -42,6 +41,9 @@ fun MineScreen(navController: NavHostController) {
     val hasPassword by vm.hasAdminPassword.collectAsStateWithLifecycle()
     var showClearDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    // onConfirm/onDismiss 是普通 lambda（非 @Composable），不能在内部调用 LocalContext.current，
+    // 因此在组合作用域内提前取出 Context 供回调使用。
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -140,7 +142,7 @@ fun MineScreen(navController: NavHostController) {
                 scope.launch { vm.clearCache() }
                 showClearDialog = false
                 android.widget.Toast.makeText(
-                    LocalContext.current, "已清空本地缓存", android.widget.Toast.LENGTH_SHORT
+                    context, "已清空本地缓存", android.widget.Toast.LENGTH_SHORT
                 ).show()
             },
             onDismiss = { showClearDialog = false }
